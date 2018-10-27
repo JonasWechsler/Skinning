@@ -38,6 +38,14 @@ const char* floor_fragment_shader =
 #include "shaders/floor.frag"
 ;
 
+const char* bone_fragment_shader =
+#include "shaders/bone.frag"
+;
+
+const char* bone_vertex_shader =
+#include "shaders/bone.vert"
+;
+
 // FIXME: Add more shaders here.
 
 void ErrorCallback(int error, const char* description) {
@@ -87,6 +95,11 @@ int main(int argc, char* argv[])
 
 	Mesh mesh;
 	mesh.loadpmd(argv[1]);
+
+	std::vector<glm::vec4> bone_vertices;
+	std::vector<glm::uvec2> bone_lines;
+    mesh.skeleton.create_bone_geometry(bone_vertices, bone_lines);
+
 	std::cout << "Loaded object  with  " << mesh.vertices.size()
 		<< " vertices and " << mesh.faces.size() << " faces.\n";
 
@@ -136,6 +149,10 @@ int main(int argc, char* argv[])
 	auto floor_model_data = [&floor_model_matrix]() -> const void* {
 		return &floor_model_matrix[0][0];
 	}; // This return model matrix for the floor.
+	glm::mat4 bone_model_matrix = glm::mat4(1.0f);
+	auto bone_model_data = [&bone_model_matrix]() -> const void* {
+		return &bone_model_matrix[0][0];
+	}; // This return model matrix for the bone.
 	auto std_view_data = [&mats]() -> const void* {
 		return mats.view;
 	};
@@ -160,6 +177,7 @@ int main(int argc, char* argv[])
 	//        Otherwise, do whatever you like here
 	ShaderUniform std_model = { "model", matrix_binder, std_model_data };
 	ShaderUniform floor_model = { "model", matrix_binder, floor_model_data };
+	ShaderUniform bone_model = { "model", matrix_binder, bone_model_data };
 	ShaderUniform std_view = { "view", matrix_binder, std_view_data };
 	ShaderUniform std_camera = { "camera_position", vector3_binder, std_camera_data };
 	ShaderUniform std_proj = { "projection", matrix_binder, std_proj_data };
@@ -188,6 +206,16 @@ int main(int argc, char* argv[])
 			{ "fragment_color" }
 			);
 
+    
+	RenderDataInput bone_pass_input;
+	bone_pass_input.assign(0, "vertex_position", bone_vertices.data(), bone_vertices.size(), 4, GL_FLOAT);
+	bone_pass_input.assign_index(bone_lines.data(), bone_lines.size(), 2);
+	RenderPass bone_pass(-1,
+			bone_pass_input,
+			{ bone_vertex_shader, nullptr, bone_fragment_shader},
+			{ bone_model, std_view, std_proj },
+			{ "fragment_color" }
+			);
 	// FIXME: Create the RenderPass objects for bones here.
 	//        Otherwise do whatever you like.
 
@@ -233,6 +261,11 @@ int main(int argc, char* argv[])
 #endif
 		// FIXME: Draw bones first.
 		// Then draw floor.
+        if(draw_skeleton){
+            bone_pass.setup();
+		    CHECK_GL_ERROR(glDrawElements(GL_LINES, bone_lines.size() * 2, GL_UNSIGNED_INT, 0));
+        }
+
 		if (draw_floor) {
 			floor_pass.setup();
 			// Draw our triangles.

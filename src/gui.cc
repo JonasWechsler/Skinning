@@ -14,6 +14,7 @@ namespace {
 	bool IntersectCylinder(const glm::vec3& origin, const glm::vec3& direction,
 			float radius, float height, float* t)
 	{
+         
 		//FIXME perform proper ray-cylinder collision detection
 		return true;
 	}
@@ -56,10 +57,16 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 		return ;
 	if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) {
 		float roll_speed;
-		if (key == GLFW_KEY_RIGHT)
+		if (key == GLFW_KEY_RIGHT){
 			roll_speed = -roll_speed_;
-		else
+        }else{
 			roll_speed = roll_speed_;
+        }
+        int bone_id = getCurrentBone();
+        if (bone_id != -1){
+            mesh_->skeleton.id_to_bone(bone_id)->roll(roll_speed);
+        }
+
 		// FIXME: actually roll the bone here
 	} else if (key == GLFW_KEY_C && action != GLFW_RELEASE) {
 		fps_mode_ = !fps_mode_;
@@ -109,8 +116,13 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		return ;
 	}
 
-	// FIXME: highlight bones that have been moused over
-	current_bone_ = -1;
+    if(!drag_bone){
+        glm::vec3 p0 = glm::unProject(glm::vec3(current_x_, current_y_, 0), view_matrix_*model_matrix_, projection_matrix_, viewport);
+        glm::vec3 p1 = glm::unProject(glm::vec3(current_x_, current_y_, 1), view_matrix_*model_matrix_, projection_matrix_, viewport);
+        glm::vec3 dir = glm::normalize(p1 - p0);
+        current_bone_ = mesh_->skeleton.get_bone_by_intersection(eye_, dir, kCylinderRadius);
+	    // FIXME: highlight bones that have been moused over
+    }
 }
 
 void GUI::mouseButtonCallback(int button, int action, int mods)

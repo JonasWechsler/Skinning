@@ -23,7 +23,23 @@ std::ostream& operator<<(std::ostream& os, const BoundingBox& bounds)
 	return os;
 }
 
+bool Bone::intersects(glm::vec3 position, glm::vec3 direction, float radius){
+    return false;
+}
 
+void Bone::roll(float radians){
+
+}
+
+void Skeleton::create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::vector<glm::uvec2>& bone_lines){
+    bone_vertices.push_back(glm::vec4(100.0, 100.0, 100.0, 1.0));
+    bone_vertices.push_back(glm::vec4(0.0, 0.0, 0.0, 1.0));
+    bone_lines.push_back(glm::uvec2(0, 1));
+}
+
+int Skeleton::get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius){
+    return -1;
+}
 
 // FIXME: Implement bone animation.
 

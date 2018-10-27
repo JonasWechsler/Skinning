@@ -22,8 +22,52 @@ struct Joint {
 	//       bones to calculate the actual animation.
 };
 
+class Bone {
+    public:
+    bool intersects(glm::vec3 position, glm::vec3 direction, float radius);
 
-struct Skeleton {
+    glm::mat4 transform(){
+        if(parent == nullptr)
+            return T*R;
+        return parent->transform()*T*R;
+    }
+
+    glm::mat4 rotation(){
+        if(parent == nullptr)
+            return R;
+        return parent->rotation()*R;
+    }
+
+    glm::vec4 t(){ return rotation()[0]; }
+    glm::vec4 n(){ return rotation()[1]; }
+    glm::vec4 b(){ return rotation()[2]; }
+    glm::vec4 origin(){
+        if(parent == nullptr)
+            return T*glm::vec4(0,0,0,1);
+        return parent->transform()*T*glm::vec4(0,0,0,1);
+    }
+    glm::vec4 endpoint(){
+        if(parent == nullptr)
+            return glm::vec4(L,0,0,1);
+        return parent->transform()*glm::vec4(L,0,0,1);
+    }
+    void roll(float radians);
+
+    private:
+    Bone* parent;
+    double L;
+    glm::mat4 T, R;
+};
+
+class Skeleton {
+    public:
+    void create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::vector<glm::uvec2>& bone_lines);
+    int get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius);
+    Bone* id_to_bone(int id){ return _id_to_bone[id]; }
+    Bone* root(){ return _root; }
+    private:
+    std::map<int, Bone*> _id_to_bone;
+    Bone* _root;
 	// FIXME: create skeleton and bone data structures
 };
 
