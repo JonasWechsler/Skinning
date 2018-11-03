@@ -111,7 +111,7 @@ void Skeleton::create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::
 }
 
 int Skeleton::get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius){
-    return -1;
+    return 1;
 }
 
 // FIXME: Implement bone animation.

@@ -46,6 +46,14 @@ const char* bone_vertex_shader =
 #include "shaders/bone.vert"
 ;
 
+const char* cylinder_fragment_shader =
+#include "shaders/cylinder.frag"
+;
+
+const char* cylinder_vertex_shader =
+#include "shaders/cylinder.vert"
+;
+
 // FIXME: Add more shaders here.
 
 void ErrorCallback(int error, const char* description) {
@@ -113,6 +121,10 @@ int main(int argc, char* argv[])
 	std::vector<glm::uvec3> floor_faces;
 	create_floor(floor_vertices, floor_faces);
 
+	std::vector<glm::vec4> cylinder_vertices;
+	std::vector<glm::uvec2> cylinder_lines;
+	create_cylinder_lattice(cylinder_vertices, cylinder_lines);
+
 	// FIXME: add code to create bone and cylinder geometry
 
 	Mesh mesh;
@@ -160,6 +172,9 @@ int main(int argc, char* argv[])
 	auto float_binder = [](int loc, const void* data) {
 		glUniform1fv(loc, 1, (const GLfloat*)data);
 	};
+	auto int_binder = [](int loc, const void* data) {
+		glUniform1iv(loc, 1, (const GLint*) data);
+	};
 	/*
 	 * These lambda functions below are used to retrieve data
 	 */
@@ -174,6 +189,14 @@ int main(int argc, char* argv[])
 	auto bone_model_data = [&bone_model_matrix]() -> const void* {
 		return &bone_model_matrix[0][0];
 	}; // This return model matrix for the bone.
+	auto cylinder_model_data = [&mesh, &gui]() -> const void* {
+        static glm::mat4 model_matrix(1.0f);
+        if(gui.getCurrentBone() != -1){
+            Bone* bone= mesh.skeleton.id_to_bone(gui.getCurrentBone());
+            model_matrix = bone->transform() * glm::scale(glm::vec3(bone->length(), 1.0, 1.0));
+        }
+        return &model_matrix;
+	}; // This return model matrix for the cylinder.
 	auto std_view_data = [&mats]() -> const void* {
 		return mats.view;
 	};
@@ -194,16 +217,21 @@ int main(int argc, char* argv[])
 		else
 			return &non_transparet;
 	};
+    auto cylinder_radius_data = []() -> const void* {
+        return &kCylinderRadius;
+    };
 	// FIXME: add more lambdas for data_source if you want to use RenderPass.
 	//        Otherwise, do whatever you like here
 	ShaderUniform std_model = { "model", matrix_binder, std_model_data };
 	ShaderUniform floor_model = { "model", matrix_binder, floor_model_data };
 	ShaderUniform bone_model = { "model", matrix_binder, bone_model_data };
+	ShaderUniform cylinder_model = { "model", matrix_binder, cylinder_model_data };
 	ShaderUniform std_view = { "view", matrix_binder, std_view_data };
 	ShaderUniform std_camera = { "camera_position", vector3_binder, std_camera_data };
 	ShaderUniform std_proj = { "projection", matrix_binder, std_proj_data };
 	ShaderUniform std_light = { "light_position", vector_binder, std_light_data };
 	ShaderUniform object_alpha = { "alpha", float_binder, alpha_data };
+	ShaderUniform cylinder_radius = { "radius", float_binder, cylinder_radius_data };
 	// FIXME: define more ShaderUniforms for RenderPass if you want to use it.
 	//        Otherwise, do whatever you like here
 
@@ -235,6 +263,16 @@ int main(int argc, char* argv[])
 			bone_pass_input,
 			{ bone_vertex_shader, nullptr, bone_fragment_shader},
 			{ bone_model, std_view, std_proj },
+			{ "fragment_color" }
+			);
+
+	RenderDataInput cylinder_pass_input;
+	cylinder_pass_input.assign(0, "vertex_position", cylinder_vertices.data(), cylinder_vertices.size(), 4, GL_FLOAT);
+	cylinder_pass_input.assign_index(cylinder_lines.data(), cylinder_lines.size(), 2);
+	RenderPass cylinder_pass(-1,
+			cylinder_pass_input,
+			{ cylinder_vertex_shader, nullptr, cylinder_fragment_shader},
+			{ cylinder_model, std_view, std_proj, cylinder_radius },
 			{ "fragment_color" }
 			);
 	// FIXME: Create the RenderPass objects for bones here.
@@ -277,6 +315,7 @@ int main(int argc, char* argv[])
 		int current_bone = gui.getCurrentBone();
 #if 1
 		draw_cylinder = (current_bone != -1 && gui.isTransparent());
+        draw_skeleton = gui.isTransparent();
 #else
 		draw_cylinder = true;
 #endif
@@ -285,6 +324,11 @@ int main(int argc, char* argv[])
         if(draw_skeleton){
             bone_pass.setup();
 		    CHECK_GL_ERROR(glDrawElements(GL_LINES, bone_lines.size() * 2, GL_UNSIGNED_INT, 0));
+        }
+
+        if(draw_cylinder){
+            cylinder_pass.setup();
+		    CHECK_GL_ERROR(glDrawElements(GL_LINES, cylinder_lines.size() * 2, GL_UNSIGNED_INT, 0));
         }
 
 		if (draw_floor) {
