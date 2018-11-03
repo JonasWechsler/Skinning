@@ -55,7 +55,7 @@ class Bone {
     glm::vec4 endpoint(){
         return transform()*glm::vec4(L,0,0,1);
     }
-    void roll(float radians);
+    void roll(double radians);
 
     private:
     Bone* parent;

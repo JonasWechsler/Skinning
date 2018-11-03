@@ -64,8 +64,15 @@ bool Bone::intersects(glm::vec3 position, glm::vec3 direction, float radius, flo
     return hit0 || hit1;
 }
 
-void Bone::roll(float radians){
+void Bone::roll(double radians){
+    glm::tvec3<double> tt = glm::vec3(R[0]);
+    glm::tmat4x4<double> rot = glm::rotate(radians, tt);
 
+    glm::vec3 n3 = glm::normalize(glm::vec3(rot * R[1]));
+    glm::vec3 b3 = glm::normalize(glm::vec3(rot * R[2]));
+    
+    R[1] = glm::vec4(n3, 0.0);
+    R[2] = glm::vec4(b3, 0.0);
 }
 
 //Assumes parents are initialized
@@ -139,6 +146,8 @@ Skeleton::Skeleton(std::vector<glm::vec3> offsets, std::vector<int> parents, std
 }
 
 void Skeleton::create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::vector<glm::uvec2>& bone_lines){
+    bone_vertices.clear();
+    bone_lines.clear();
     for(int id = 0; id < size(); id++){
         bone_vertices.push_back(_id_to_bone[id]->origin());
         bone_vertices.push_back(_id_to_bone[id]->endpoint());

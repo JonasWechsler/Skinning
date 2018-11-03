@@ -342,6 +342,9 @@ int main(int argc, char* argv[])
 				object_pass.updateVBO(0,
 						      mesh.animated_vertices.data(),
 						      mesh.animated_vertices.size());
+
+                mesh.skeleton.create_bone_geometry(bone_vertices, bone_lines);
+                bone_pass.updateVBO(0, bone_vertices.data(), bone_vertices.size());
 #if 0
 				// For debugging if you need it.
 				for (int i = 0; i < 4; i++) {

@@ -58,7 +58,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	if (captureWASDUPDOWN(key, action))
 		return ;
 	if (key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) {
-		float roll_speed;
+		double roll_speed;
 		if (key == GLFW_KEY_RIGHT){
 			roll_speed = -roll_speed_;
         }else{
@@ -67,6 +67,7 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
         int bone_id = getCurrentBone();
         if (bone_id != -1){
             mesh_->skeleton.id_to_bone(bone_id)->roll(roll_speed);
+            pose_changed_ = true;
         }
 
 		// FIXME: actually roll the bone here
