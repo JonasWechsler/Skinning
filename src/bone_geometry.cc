@@ -24,8 +24,44 @@ std::ostream& operator<<(std::ostream& os, const BoundingBox& bounds)
 	return os;
 }
 
-bool Bone::intersects(glm::vec3 position, glm::vec3 direction, float radius){
-    return false;
+bool Bone::intersects(glm::vec3 position, glm::vec3 direction, float radius, float& dist){
+    glm::vec4 p = glm::inverse(transform()) * glm::vec4(position, 1.0);
+    glm::vec4 d = glm::inverse(rotation()) * glm::vec4(direction, 0.0);
+
+    float x0 = p.y;
+    float y0 = p.z;
+    float x1 = d.y;
+    float y1 = d.z;
+
+    float a = x1*x1 + y1*y1;
+    float b = 2.0*(x0*x1 + y0*y1);
+    float c = x0*x0 + y0*y0 - radius*radius;
+
+    float discriminant = b*b - 4.0*a*c;
+
+    if(discriminant < 0.0)
+        return false;
+    
+    discriminant = glm::sqrt(discriminant);
+
+    float t0 = (-b + discriminant)/(2.0*a),
+          t1 = (-b - discriminant)/(2.0*a);
+
+    glm::vec4 intersection0 = (p + d*t0),
+              intersection1 = (p + d*t1);
+
+    bool hit0 = (t0 >= 0.0 && intersection0.x >= 0.0 && intersection0.x <= L),
+         hit1 = (t1 >= 0.0 && intersection1.x >= 0.0 && intersection1.x <= L);
+
+    if(hit0 && hit1){
+        dist = glm::min(t0, t1);
+    }else if(hit0){
+        dist = t0;
+    }else if(hit1){
+        dist = t1;
+    }
+
+    return hit0 || hit1;
 }
 
 void Bone::roll(float radians){
@@ -111,7 +147,22 @@ void Skeleton::create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::
 }
 
 int Skeleton::get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius){
-    return 1;
+    int result = -1;
+    float min_dist = -1;
+
+    for(int id = 0; id < size(); id++){
+        float dist = 0;
+
+        if(!_id_to_bone[id]->intersects(position, direction, radius, dist))
+            continue;
+
+        if(min_dist < 0 || min_dist > dist){
+            min_dist = dist;
+            result = id;
+        }
+    }
+
+    return result;
 }
 
 // FIXME: Implement bone animation.

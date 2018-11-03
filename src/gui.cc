@@ -3,7 +3,9 @@
 #include <jpegio.h>
 #include "bone_geometry.h"
 #include <iostream>
+#include <fstream>
 #include <debuggl.h>
+#include <glm/gtx/io.hpp>
 #include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
@@ -121,7 +123,6 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
         glm::vec3 p1 = glm::unProject(glm::vec3(current_x_, current_y_, 1), view_matrix_*model_matrix_, projection_matrix_, viewport);
         glm::vec3 dir = glm::normalize(p1 - p0);
         current_bone_ = mesh_->skeleton.get_bone_by_intersection(eye_, dir, kCylinderRadius);
-	    // FIXME: highlight bones that have been moused over
     }
 }
 

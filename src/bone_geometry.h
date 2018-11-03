@@ -29,7 +29,7 @@ class Bone {
     public:
     Bone(glm::vec3, Bone*);
 
-    bool intersects(glm::vec3 position, glm::vec3 direction, float radius);
+    bool intersects(glm::vec3 position, glm::vec3 direction, float radius, float& dist);
 
     glm::mat4 transform(){
         if(parent == nullptr)
