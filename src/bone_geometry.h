@@ -17,6 +17,9 @@ struct BoundingBox {
 };
 
 struct Joint {
+    Joint(glm::vec3 offset, int parent):offset(offset), parent(parent){}
+    int parent;
+    glm::vec3 offset;
 	// FIXME: Implement your Joint data structure.
 	// Note: PMD represents weights on joints, but you need weights on
 	//       bones to calculate the actual animation.
@@ -24,6 +27,8 @@ struct Joint {
 
 class Bone {
     public:
+    Bone(glm::vec3, Bone*);
+
     bool intersects(glm::vec3 position, glm::vec3 direction, float radius);
 
     glm::mat4 transform(){
@@ -38,6 +43,7 @@ class Bone {
         return parent->rotation()*R;
     }
 
+    double length(){ return L; }
     glm::vec4 t(){ return rotation()[0]; }
     glm::vec4 n(){ return rotation()[1]; }
     glm::vec4 b(){ return rotation()[2]; }
@@ -47,9 +53,7 @@ class Bone {
         return parent->transform()*T*glm::vec4(0,0,0,1);
     }
     glm::vec4 endpoint(){
-        if(parent == nullptr)
-            return glm::vec4(L,0,0,1);
-        return parent->transform()*glm::vec4(L,0,0,1);
+        return transform()*glm::vec4(L,0,0,1);
     }
     void roll(float radians);
 
@@ -61,14 +65,18 @@ class Bone {
 
 class Skeleton {
     public:
-    void create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::vector<glm::uvec2>& bone_lines);
-    int get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius);
-    Bone* id_to_bone(int id){ return _id_to_bone[id]; }
-    Bone* root(){ return _root; }
+        Skeleton();
+        Skeleton(std::vector<glm::vec3>, std::vector<int>, std::vector<SparseTuple>);
+        void create_bone_geometry(std::vector<glm::vec4>&bone_vertices, std::vector<glm::uvec2>& bone_lines);
+        int get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius);
+        int size(){ return _id_to_bone.size()-1; }
+        Bone* id_to_bone(int id){ return _id_to_bone[id]; }
+        Bone* root(){ return _root; }
     private:
-    std::map<int, Bone*> _id_to_bone;
-    Bone* _root;
-	// FIXME: create skeleton and bone data structures
+        std::vector<SparseTuple> weights;
+        std::map<int, Bone*> _id_to_bone;
+        Bone* _root;
+    	// FIXME: create skeleton and bone data structures
 };
 
 struct Mesh {

@@ -79,6 +79,28 @@ GLFWwindow* init_glefw()
 
 int main(int argc, char* argv[])
 {
+#if 0
+    std::vector<glm::vec3> offsets;
+    offsets.push_back(glm::vec3(1, 0, 0));
+    offsets.push_back(glm::vec3(0, 2, 3));
+    offsets.push_back(glm::vec3(-1, -2, 0));
+    std::vector<int> parents;
+    parents.push_back(-1);
+    parents.push_back(0);
+    parents.push_back(1);
+    std::vector<SparseTuple> weights;
+    Skeleton s(offsets, parents, weights);
+
+
+    Bone* a = new Bone(glm::vec3(1, 0, 0), nullptr);
+    Bone* b = new Bone(glm::vec3(0, 1, 1), a);
+    Bone* c = new Bone(glm::vec3(-1, 0, 0), b);
+
+    std::cout << a->origin() << " " << a->endpoint() << std::endl;
+    std::cout << b->origin() << " " << b->endpoint() << std::endl;
+    std::cout << c->origin() << " " << c->endpoint() << std::endl;
+    return 0;
+#endif
 	if (argc < 2) {
 		std::cerr << "Input model file is missing" << std::endl;
 		std::cerr << "Usage: " << argv[0] << " <PMD file>" << std::endl;
@@ -95,7 +117,6 @@ int main(int argc, char* argv[])
 
 	Mesh mesh;
 	mesh.loadpmd(argv[1]);
-
 	std::vector<glm::vec4> bone_vertices;
 	std::vector<glm::uvec2> bone_lines;
     mesh.skeleton.create_bone_geometry(bone_vertices, bone_lines);
