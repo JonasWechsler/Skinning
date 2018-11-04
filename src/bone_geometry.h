@@ -27,7 +27,7 @@ struct Joint {
 
 class Bone {
     public:
-    Bone(glm::vec3, Bone*);
+    Bone(glm::vec3, Bone*, int id);
 
     bool intersects(glm::vec3 position, glm::vec3 direction, float radius, float& dist);
 
@@ -57,26 +57,27 @@ class Bone {
     }
     void roll(double radians);
     void rotate(double radians, glm::dvec3 axis);
+    int id(){ return _id; }
+    int parent_id(){ return parent?parent->id():-1; }
 
     private:
     Bone* parent;
     double L;
+    int _id;
     glm::mat4 T, R;
 };
 
 class Skeleton {
     public:
         Skeleton();
-        Skeleton(std::vector<glm::vec3>, std::vector<int>, std::vector<SparseTuple>);
+        Skeleton(std::vector<glm::vec3>, std::vector<int>);
         void create_bone_geometry(std::vector<glm::vec4>&bone_vertices, std::vector<glm::uvec2>& bone_lines);
         int get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius);
         int size(){ return _id_to_bone.size()-1; }
-        std::vector<SparseTuple> get_weights(){ return weights; }
         Bone* id_to_bone(int id){ return _id_to_bone[id]; }
         glm::vec3 get_joint(int id){ return glm::vec3(id_to_bone(id)->endpoint()); }
         Bone* root(){ return _root; }
     private:
-        std::vector<SparseTuple> weights;
         std::map<int, Bone*> _id_to_bone;
         Bone* _root;
     	// FIXME: create skeleton and bone data structures
@@ -105,6 +106,11 @@ struct Mesh {
 private:
 	void computeBounds();
 	void computeNormals();
+
+    std::vector<std::vector<float>> weights;
+    std::vector<glm::mat4> inv_reference_pose;
+    std::vector<glm::vec4> reference_pose;
+    //std::vector<SparseTuple> weights;
 };
 
 #endif

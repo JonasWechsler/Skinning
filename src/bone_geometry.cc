@@ -89,7 +89,7 @@ void Bone::rotate(double radians, glm::dvec3 axis){
 }
 
 //Assumes parents are initialized
-Bone::Bone(glm::vec3 offset, Bone* parent):parent(parent){
+Bone::Bone(glm::vec3 offset, Bone* parent, int id):parent(parent), _id(id){
     glm::vec4 origin = glm::vec4(0.0);
     glm::mat4 parent_transform = glm::mat4(1.0);
     if(parent != nullptr){
@@ -130,7 +130,7 @@ Bone::Bone(glm::vec3 offset, Bone* parent):parent(parent){
 
 Skeleton::Skeleton(){}
 
-Skeleton::Skeleton(std::vector<glm::vec3> offsets, std::vector<int> parents, std::vector<SparseTuple> weight):weights(weight){
+Skeleton::Skeleton(std::vector<glm::vec3> offsets, std::vector<int> parents){
     std::map<int, std::vector<int>> children;
     for(int id = 0; id < static_cast<int>(parents.size()); ++id){
         children[parents[id]].push_back(id);
@@ -150,13 +150,13 @@ Skeleton::Skeleton(std::vector<glm::vec3> offsets, std::vector<int> parents, std
         int pid = parents[id];
         Bone* parent = _id_to_bone[pid];
 
-        _id_to_bone[id] = new Bone(offset, parent);
+        _id_to_bone[id] = new Bone(offset, parent, id);
 
         for(int cid = 0; cid < static_cast<int>(children[id].size()); ++cid){
             id_queue.push(children[id][cid]);
         }
     }
-    
+    assert(size() == offsets.size());
 
 }
 
@@ -219,18 +219,55 @@ void Mesh::loadpmd(const std::string& fn)
         parents.push_back(parent);
     }
     
-    std::vector<SparseTuple> weights;
-    mr.getJointWeights(weights);
-    skeleton = Skeleton(offsets, parents, weights);
+    std::vector<SparseTuple> st_weights;
+    mr.getJointWeights(st_weights);
+    skeleton = Skeleton(offsets, parents);
 	// FIXME: load skeleton and blend weights from PMD file
 	//        also initialize the skeleton as needed
+    
+    //***//
+    //***//
+    const int bone_count = skeleton.size();
+    const int vertex_count = vertices.size();
+
+    weights = std::vector<std::vector<float>>(bone_count, std::vector<float>(vertex_count, 0.0));
+    for(size_t idx = 0; idx < st_weights.size(); ++idx){
+        SparseTuple entry = st_weights[idx];
+        int jid = entry.jid;
+        int vid = entry.vid;
+        for(int id = 0; id < bone_count; id++){
+            if(skeleton.id_to_bone(id)->parent_id() == jid){
+                weights[id][vid] = entry.weight;
+                break;
+            }
+        }
+    }
+
+    for(int id = 0; id < bone_count; ++id){
+        inv_reference_pose.push_back(glm::inverse(skeleton.id_to_bone(id)->transform()));
+    }
+
+    for(int vid = 0; vid < vertex_count; ++vid){
+        reference_pose.push_back(vertices[vid]);
+    }
 }
 
 void Mesh::updateAnimation()
 {
-	animated_vertices = vertices;
 	// FIXME: blend the vertices to animated_vertices, rather than copy
 	//        the data directly.
+    vertices = std::vector<glm::vec4>(vertices.size(), glm::vec4(0.0));
+    for(size_t bone_id = 0; bone_id < skeleton.size(); bone_id++){
+        glm::mat4 B = skeleton.id_to_bone(bone_id)->transform()*inv_reference_pose[bone_id];
+        for(size_t vid = 0; vid < vertices.size(); vid++){
+            if(weights[bone_id][vid] == 0.0){
+                continue;
+            }
+            vertices[vid] += weights[bone_id][vid]*B*reference_pose[vid];
+        }
+    }
+    
+	animated_vertices = vertices;
 }
 
 
