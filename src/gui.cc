@@ -53,6 +53,10 @@ void GUI::keyCallback(int key, int scancode, int action, int mods)
 	}
 	if (key == GLFW_KEY_J && action == GLFW_RELEASE) {
 		//FIXME save out a screenshot using SaveJPEG
+        unsigned char * buffer = new unsigned char[window_height_ * window_width_ * 3];
+        glReadPixels(0, 0, window_width_, window_height_, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+        SaveJPEG("screenshot.jpeg", window_width_, window_height_, buffer);
+        delete[] buffer;
 	}
 
 	if (captureWASDUPDOWN(key, action))
