@@ -115,8 +115,9 @@ void GUI::mousePosCallback(double mouse_x, double mouse_y)
 		up_ = glm::column(orientation_, 1);
 		look_ = glm::column(orientation_, 2);
 	} else if (drag_bone && current_bone_ != -1) {
-		// FIXME: Handle bone rotation
-		return ;
+        glm::vec3 axis = glm::normalize(glm::cross(look_, glm::vec3(delta_x, delta_y, 0.0)));
+        mesh_->skeleton.id_to_bone(current_bone_)->rotate(rotation_speed_, axis);
+        pose_changed_ = true;
 	}
 
     if(!drag_bone){

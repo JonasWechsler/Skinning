@@ -75,6 +75,19 @@ void Bone::roll(double radians){
     R[2] = glm::vec4(b3, 0.0);
 }
 
+void Bone::rotate(double radians, glm::dvec3 axis){
+    glm::tmat4x4<double> rot = glm::rotate(radians, axis);
+
+    glm::vec3 t = glm::normalize(glm::vec3(rot * R[0]));
+    glm::vec3 n = glm::normalize(glm::vec3(rot * R[1]));
+    glm::vec3 b = glm::normalize(glm::vec3(rot * R[2]));
+    
+    R[0] = glm::vec4(t, 0.0);
+    R[1] = glm::vec4(n, 0.0);
+    R[2] = glm::vec4(b, 0.0);
+    R[3] = glm::vec4(0.0, 0.0, 0.0, 1.0);
+}
+
 //Assumes parents are initialized
 Bone::Bone(glm::vec3 offset, Bone* parent):parent(parent){
     glm::vec4 origin = glm::vec4(0.0);
@@ -92,11 +105,11 @@ Bone::Bone(glm::vec3 offset, Bone* parent):parent(parent){
     }
     L = glm::length(offset);
 
-    glm::vec4 relative_offset = glm::transpose(parent_rotation) * glm::vec4(offset, 0.0);
-    glm::vec3 t = glm::normalize(glm::vec3(relative_offset));
-    std::cout << t << " ";
-    t = glm::normalize(glm::vec3(glm::inverse(parent_transform*T) * (origin+glm::vec4(offset,0.0))));
-    std::cout << t << std::endl;
+    //glm::vec4 relative_offset = glm::transpose(parent_rotation) * glm::vec4(offset, 0.0);
+    //glm::vec3 t = glm::normalize(glm::vec3(relative_offset));
+    //std::cout << t << " ";
+    glm::vec3 t = glm::normalize(glm::vec3(glm::inverse(parent_transform*T) * (origin+glm::vec4(offset,0.0))));
+    //std::cout << t << std::endl;
 
     glm::vec3 v = t;
     if(std::abs(v.x) <= std::abs(v.y) && std::abs(v.x) <= std::abs(v.z)){
@@ -143,6 +156,8 @@ Skeleton::Skeleton(std::vector<glm::vec3> offsets, std::vector<int> parents, std
             id_queue.push(children[id][cid]);
         }
     }
+    
+
 }
 
 void Skeleton::create_bone_geometry(std::vector<glm::vec4>& bone_vertices, std::vector<glm::uvec2>& bone_lines){

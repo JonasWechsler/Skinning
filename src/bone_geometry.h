@@ -56,6 +56,7 @@ class Bone {
         return transform()*glm::vec4(L,0,0,1);
     }
     void roll(double radians);
+    void rotate(double radians, glm::dvec3 axis);
 
     private:
     Bone* parent;
@@ -70,7 +71,9 @@ class Skeleton {
         void create_bone_geometry(std::vector<glm::vec4>&bone_vertices, std::vector<glm::uvec2>& bone_lines);
         int get_bone_by_intersection(glm::vec3 position, glm::vec3 direction, float radius);
         int size(){ return _id_to_bone.size()-1; }
+        std::vector<SparseTuple> get_weights(){ return weights; }
         Bone* id_to_bone(int id){ return _id_to_bone[id]; }
+        glm::vec3 get_joint(int id){ return glm::vec3(id_to_bone(id)->endpoint()); }
         Bone* root(){ return _root; }
     private:
         std::vector<SparseTuple> weights;
@@ -94,10 +97,9 @@ struct Mesh {
 
 	void loadpmd(const std::string& fn);
 	void updateAnimation();
-	int getNumberOfBones() const 
+	int getNumberOfBones()
 	{ 
-		return 0;
-		// FIXME: return number of bones in skeleton
+        return skeleton.size();
 	}
 	glm::vec3 getCenter() const { return 0.5f * glm::vec3(bounds.min + bounds.max); }
 private:
